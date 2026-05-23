@@ -248,28 +248,54 @@ export const AuthProvider = ({ children }) => {
   // Handle Google auth callback
   const completeGoogleAuth = async (token) => {
     if (!token) {
-      console.error('No token provided for Google auth completion');
+      console.error('❌ No token provided for Google auth completion');
       return false;
     }
     
     try {
-      console.log('Completing Google authentication with token');
+      console.log('🔄 Completing Google authentication with token');
+      
       // Store the access token
       localStorage.setItem('accessToken', token);
+      console.log('✅ Token stored in localStorage');
       
       // Fetch user profile with the new token
       const profileResponse = await api.get(`${API_URL}/auth/profile`);
       
       if (profileResponse.data.success) {
-        console.log('Google auth successful, user profile fetched');
+        console.log('✅ Google auth successful, user profile fetched');
+        console.log('👤 User:', profileResponse.data.data.email);
         setCurrentUser(profileResponse.data.data);
         return true;
       } else {
-        console.error('Failed to fetch user profile after Google auth');
+        console.error('❌ Failed to fetch user profile:', profileResponse.data.message);
         return false;
       }
     } catch (error) {
-      console.error('Google auth completion error:', error);
+      console.error('❌ Google auth completion error:', error.message);
+      
+      // Check if it's a network error (might be transient)
+      if (error.message.includes('Network') || error.code === 'ECONNABORTED') {
+        console.warn('⚠️ Network error - this might be transient');
+      }
+      
+      // Still try to navigate if token is stored (user can retry)
+      const hasToken = localStorage.getItem('accessToken');
+      if (hasToken) {
+        console.log('⚠️ Token stored but profile fetch failed, attempting to recover...');
+        try {
+          // Retry once more after a short delay
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const retryResponse = await api.get(`${API_URL}/auth/profile`);
+          if (retryResponse.data.success) {
+            setCurrentUser(retryResponse.data.data);
+            return true;
+          }
+        } catch (retryError) {
+          console.warn('⚠️ Retry also failed:', retryError.message);
+        }
+      }
+      
       return false;
     }
   };
