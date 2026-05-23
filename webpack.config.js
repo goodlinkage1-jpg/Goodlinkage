@@ -3,7 +3,20 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const dotenv = require('dotenv');
 
-const env = dotenv.config().parsed || {};
+// Load .env locally, but prioritize process.env (Vercel injects here)
+const localEnv = dotenv.config().parsed || {};
+const env = {
+  ...localEnv,
+  ...process.env
+};
+
+// Filter for REACT_APP_* variables (frontend convention)
+const envKeys = {};
+Object.keys(env).forEach(key => {
+  if (key.startsWith('REACT_APP_')) {
+    envKeys[key] = env[key];
+  }
+});
 
 module.exports = {
   entry: './src/index.js',
@@ -50,9 +63,9 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
     }),
-    // ✅ ADD THIS — injects .env variables into the browser bundle
+    // ✅ FIXED — injects REACT_APP_* variables into the browser bundle (works on Vercel)
     new webpack.DefinePlugin({
-      'process.env': JSON.stringify(env),
+      'process.env': JSON.stringify(envKeys),
     }),
   ],
   devServer: {

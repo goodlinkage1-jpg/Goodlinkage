@@ -100,7 +100,10 @@ const PropertiesMapView = () => {
     const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
     
     if (!apiKey) {
-      console.error('❌ Google Maps API key not found. Set GOOGLE_MAPS_KEY environment variable.');
+      console.error('❌ Google Maps API key not found.');
+      console.error('🔧 FIX: In Vercel, set environment variable as: REACT_APP_GOOGLE_MAPS_KEY=<your_key>');
+      console.error('💡 Note: The REACT_APP_ prefix is REQUIRED for frontend env vars (webpack convention)');
+      console.error('📝 Locally: Add to .env file as REACT_APP_GOOGLE_MAPS_KEY=<your_key>');
       scriptLoadedRef.current = false;
       return;
     }
@@ -121,9 +124,10 @@ const PropertiesMapView = () => {
     script.onerror = () => {
       console.error('❌ Failed to load Google Maps script');
       console.error('Please verify:');
-      console.error('1. API key is valid in .env file (REACT_APP_GOOGLE_MAPS_KEY)');
+      console.error('1. API key (REACT_APP_GOOGLE_MAPS_KEY) is correctly set in Vercel');
       console.error('2. Maps JavaScript API is enabled in Google Cloud Console');
-      console.error('3. API key restrictions allow this domain');
+      console.error('3. API key restrictions allow Vercel domain(s)');
+      console.error('4. Rebuild/redeploy after setting env vars in Vercel');
       scriptLoadedRef.current = false;
     };
 
