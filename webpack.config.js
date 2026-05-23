@@ -18,6 +18,20 @@ Object.keys(env).forEach(key => {
   }
 });
 
+// 🔍 Log for debugging - shows what env vars are being injected
+console.log('📦 Webpack Build Environment Variables:');
+Object.keys(envKeys).forEach(key => {
+  const value = envKeys[key];
+  const displayValue = value ? `${value.substring(0, 10)}...` : 'MISSING ⚠️';
+  console.log(`  ${key}: ${displayValue}`);
+});
+
+if (!envKeys.REACT_APP_GOOGLE_MAPS_KEY) {
+  console.warn('⚠️  WARNING: REACT_APP_GOOGLE_MAPS_KEY not set in build environment!');
+  console.warn('   On Vercel: Add to Project Settings → Environment Variables');
+  console.warn('   Locally: Add to .env file');
+}
+
 module.exports = {
   entry: './src/index.js',
   output: {
@@ -63,10 +77,14 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
     }),
-    // ✅ FIXED — injects REACT_APP_* variables into the browser bundle (works on Vercel)
-    new webpack.DefinePlugin({
-      'process.env': JSON.stringify(envKeys),
-    }),
+    // ✅ FIXED — Properly injects REACT_APP_* variables into the browser bundle
+    // DefinePlugin requires each env var to be individually stringified, not the entire object
+    new webpack.DefinePlugin(
+      Object.keys(envKeys).reduce((acc, key) => {
+        acc[`process.env.${key}`] = JSON.stringify(envKeys[key]);
+        return acc;
+      }, {})
+    ),
   ],
   devServer: {
     static: {
