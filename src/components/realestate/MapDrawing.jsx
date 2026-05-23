@@ -49,6 +49,8 @@ const MapDrawing = ({ onGeometryChange, onDrawingStart, initialGeometry }) => {
         scriptLoadedRef.current = false;
         return;
       }
+
+      
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,drawing&loading=async`;
       script.async = true;
       script.defer = true;
