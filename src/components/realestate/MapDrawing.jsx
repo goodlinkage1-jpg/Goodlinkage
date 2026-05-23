@@ -31,7 +31,17 @@ const MapDrawing = ({ onGeometryChange, onDrawingStart, initialGeometry }) => {
 
       // Load Google Maps with drawing library
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_KEY}&libraries=geometry`;
+      const apiKey = process.env.REACT_APP_GOOGLE_MAPS_KEY;
+    
+    if (!apiKey) {
+      console.error('❌ Google Maps API key not found.');
+      console.error('🔧 FIX: In Vercel, set environment variable as: REACT_APP_GOOGLE_MAPS_KEY=<your_key>');
+      console.error('💡 Note: The REACT_APP_ prefix is REQUIRED for frontend env vars (webpack convention)');
+      console.error('📝 Locally: Add to .env file as REACT_APP_GOOGLE_MAPS_KEY=<your_key>');
+      scriptLoadedRef.current = false;
+      return;
+    }
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,drawing&loading=async`;
       script.async = true;
       script.defer = true;
 
