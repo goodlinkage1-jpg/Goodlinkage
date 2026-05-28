@@ -28,11 +28,11 @@ const PropertiesMapView = () => {
 
   // Dynamic API URL to match backend environment
   const getApiUrl = () => {
-    if (typeof window !== 'undefined') {
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:5000';
-      }
-    }
+    // if (typeof window !== 'undefined') {
+    //   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    //     return 'http://localhost:5000';
+    //   }
+    // }
     return 'https://goodlinkage-api.vercel.app';
   };
 
@@ -431,47 +431,67 @@ const PropertiesMapView = () => {
           position: { lat: latNum, lng: lngNum },
           map,
           title: listing.title,
-          label: {
-            text: `${areaHectares}ha`,
-            color: 'white',
-            fontSize: '11px',
-            fontWeight: 'bold'
-          },
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 12,
-            fillColor: isSold ? '#9ca3af' : '#16a34a',
-            fillOpacity: isSold ? 0.7 : 0.9,
-            strokeColor: '#ffffff',
-            strokeWeight: 2
+         icon: {
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+              <svg xmlns="http://www.w3.org/2000/svg" width="70" height="70" viewBox="0 0 36 44">
+                <!-- Pin body -->
+                <rect x="1" y="1" width="34" height="34" rx="6" ry="6"
+                  fill="${isSold ? '#9ca3af' : '#1a56db'}"
+                  stroke="white" stroke-width="2"/>
+                <!-- Pin tail -->
+                <polygon points="12,33 24,33 18,43"
+                  fill="${isSold ? '#9ca3af' : '#1a56db'}"/>
+                <!-- Question mark -->
+                <text x="18" y="27" font-family="Arial,sans-serif" font-size="22"
+                  font-weight="bold" fill="white"
+                  text-anchor="middle" dominant-baseline="auto">?</text>
+              </svg>
+            `)}`,
+            scaledSize: new window.google.maps.Size(36, 44),
+            anchor: new window.google.maps.Point(18, 43)
           }
         });
 
         marker.addListener('click', () => {
-          if (infoWindowRef.current) infoWindowRef.current.close();
-          setSelectedListing(listing);
-          const infoWindow = new window.google.maps.InfoWindow({
-            content: `
-              <div style="max-width: 350px; padding: 12px;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <h3 style="margin: 0; font-weight: bold; font-size: 15px; color: ${isSold ? '#9ca3af' : '#16a34a'};">${listing.title}</h3>
-                  ${statusBadge}
-                </div>
-                <p style="margin: 6px 0; font-size: 12px; color: #666;"><strong>Location:</strong> ${listing.address}</p>
-                <p style="margin: 0 0 6px 0; font-size: 12px; color: #666;"><strong>City:</strong> ${listing.city || 'N/A'}</p>
-                <div style="background: ${isSold ? '#f3f4f6' : '#f0fdf4'}; padding: 8px; border-radius: 4px; margin: 6px 0;">
-                  <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: bold; color: ${isSold ? '#9ca3af' : '#16a34a'};">📐 Plot Size:</p>
-                  <p style="margin: 0; font-size: 11px; color: #666;">${areaHectares} hectares | ${areaAcres} acres</p>
-                </div>
-                <p style="margin: 6px 0; color: ${isSold ? '#9ca3af' : '#16a34a'}; font-weight: bold; font-size: 13px;">${new Intl.NumberFormat().format(listing.price)} ${listing.currency}</p>
-                <p style="margin: 6px 0; font-size: 12px; color: #666;"><strong>Category:</strong> ${listing.category}</p>
-                <p style="margin: 6px 0; font-size: 12px; color: #666;"><strong>Description:</strong> ${listing.description}</p>
-              </div>
-            `
-          });
-          infoWindowRef.current = infoWindow;
-          infoWindow.open(map, marker);
-        });
+  if (infoWindowRef.current) infoWindowRef.current.close();
+
+  // ✅ Zoom into the property polygon bounds
+  const bounds = new window.google.maps.LatLngBounds();
+  polygonCoordinates.forEach(coord => {
+    bounds.extend(new window.google.maps.LatLng(coord.lat, coord.lng));
+  });
+  map.fitBounds(bounds, { top: 80, right: 80, bottom: 280, left: 80 });
+
+  // Cap zoom at 18
+  const zoomCap = window.google.maps.event.addListener(map, 'zoom_changed', () => {
+    if (map.getZoom() > 18) map.setZoom(18);
+    window.google.maps.event.removeListener(zoomCap);
+  });
+
+  setSelectedListing(listing);
+
+  const infoWindow = new window.google.maps.InfoWindow({
+    content: `
+      <div style="max-width: 350px; padding: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h3 style="margin: 0; font-weight: bold; font-size: 15px; color: ${isSold ? '#9ca3af' : '#16a34a'};">${listing.title}</h3>
+          ${statusBadge}
+        </div>
+        <p style="margin: 6px 0; font-size: 12px; color: #666;"><strong>Location:</strong> ${listing.address}</p>
+        <p style="margin: 0 0 6px 0; font-size: 12px; color: #666;"><strong>City:</strong> ${listing.city || 'N/A'}</p>
+        <div style="background: ${isSold ? '#f3f4f6' : '#f0fdf4'}; padding: 8px; border-radius: 4px; margin: 6px 0;">
+          <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: bold; color: ${isSold ? '#9ca3af' : '#16a34a'};">📐 Plot Size:</p>
+          <p style="margin: 0; font-size: 11px; color: #666;">${areaHectares} hectares | ${areaAcres} acres</p>
+        </div>
+        <p style="margin: 6px 0; color: ${isSold ? '#9ca3af' : '#16a34a'}; font-weight: bold; font-size: 13px;">${new Intl.NumberFormat().format(listing.price)} ${listing.currency}</p>
+        <p style="margin: 6px 0; font-size: 12px; color: #666;"><strong>Category:</strong> ${listing.category}</p>
+        <p style="margin: 6px 0; font-size: 12px; color: #666;"><strong>Description:</strong> ${listing.description}</p>
+      </div>
+    `
+  });
+  infoWindowRef.current = infoWindow;
+  infoWindow.open(map, marker);
+});
 
         newMarkers.push(marker);
         markersRef.current.push(marker);
@@ -568,27 +588,7 @@ const PropertiesMapView = () => {
                 </select>
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Price Range</label>
-                <div className="space-y-2">
-                  <input
-                    type="number"
-                    name="priceMin"
-                    placeholder="Min"
-                    value={filters.priceMin}
-                    onChange={handleFilterChange}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="number"
-                    name="priceMax"
-                    placeholder="Max"
-                    value={filters.priceMax}
-                    onChange={handleFilterChange}
-                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">Search</label>
